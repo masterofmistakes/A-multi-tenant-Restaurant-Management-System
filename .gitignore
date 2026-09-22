@@ -1,0 +1,6 @@
+venv/
+.pytest_cashe/
+./__pycache__/
+.env
+db.sqlite3
+staticfiles/
