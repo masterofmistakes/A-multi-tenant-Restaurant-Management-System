@@ -4,6 +4,7 @@ from rest_framework.viewsets import ModelViewSet
 from .permissions import WhoAreYou
 from accounts.models import UserRole
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError
 from restaurants.models import Restaurant
 
 class ReservationViewSet(ModelViewSet):
@@ -23,11 +24,29 @@ class ReservationViewSet(ModelViewSet):
             return Reservation.objects.filter(client = self.request.user)
         return super().get_queryset()
 
+
     def perform_create(self, serializer):
-        restaurant_id = self.request.query_params.get('restaurant_id')
-        if self.request.user and self.request.user.is_authenticated and self.request.user.role == UserRole.CLIENT:
-            restaurant = get_object_or_404(Restaurant, pk=restaurant_id, is_active=True)
+        user = self.request.user
+
+        if user.role == UserRole.CLIENT:
+            restaurant_id = self.request.query_params.get('restaurant_id')
+
+            if not restaurant_id:
+                raise ValidationError({
+                    'restaurant_id': 'restaurant_id  parametiri kiritiliw shart!!!.'
+                })
+
+            restaurant = get_object_or_404(
+                Restaurant, pk=restaurant_id, is_active=True
+            )
             serializer.save(restaurant=restaurant)
         else:
-            serializer.save(restaurant=self.request.user.restaurant)
+            if not user.restaurant:
+                raise ValidationError({
+                    'detail': (
+                        'Sizge hesh qanday restoran biriktirilmegen.'
+                    )
+                })
+
+            serializer.save(restaurant=user.restaurant)
 
