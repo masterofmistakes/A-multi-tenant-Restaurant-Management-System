@@ -3,6 +3,8 @@ from .serializers import ReservationReadSerializer, ReservationSerializer
 from rest_framework.viewsets import ModelViewSet
 from .permissions import WhoAreYou
 from accounts.models import UserRole
+from django.shortcuts import get_object_or_404
+from restaurants.models import Restaurant
 
 class ReservationViewSet(ModelViewSet):
     queryset = Reservation.objects.all()
@@ -24,7 +26,8 @@ class ReservationViewSet(ModelViewSet):
     def perform_create(self, serializer):
         restaurant_id = self.request.query_params.get('restaurant_id')
         if self.request.user and self.request.user.is_authenticated and self.request.user.role == UserRole.CLIENT:
-            serializer.save(restaurant=restaurant_id)
+            restaurant = get_object_or_404(Restaurant, pk=restaurant_id, is_active=True)
+            serializer.save(restaurant=restaurant)
         else:
             serializer.save(restaurant=self.request.user.restaurant)
 
